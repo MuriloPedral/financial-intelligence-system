@@ -1,198 +1,227 @@
-# Sistema de Inteligência Financeira
+# Financial Intelligence System
 
-## Visão Geral
+Projeto de geracao de dados financeiros sinteticos e deteccao de anomalias em transacoes.
 
-O **Sistema de Inteligência Financeira** é um projeto desenvolvido para simular comportamentos financeiros e detectar anomalias em dados de transações.
+## Ideia do projeto
 
-O objetivo é construir um dataset financeiro sintético e desenvolver ferramentas analíticas capazes de identificar padrões incomuns, como transações fraudulentas ou comportamentos atípicos em contas bancárias.
+Este projeto foi construido para simular um pequeno ecossistema bancario ficticio e, em seguida, aplicar analise de dados e machine learning para encontrar movimentacoes suspeitas.
 
-Este projeto está sendo desenvolvido com foco em **aprendizado prático**, abordando:
+Em vez de depender de dados bancarios reais, o sistema gera:
 
-* Simulação de dados
-* Modelagem de comportamento financeiro
-* Detecção de anomalias
-* Análise de transações financeiras
+1. contas sinteticas com perfis de comportamento
+2. historico de transacoes ao longo do tempo
+3. sinais de comportamento anomalo
+4. um relatorio final com ranking das transacoes mais suspeitas
 
-O sistema gera dados bancários sintéticos incluindo **contas e transações** que simulam comportamentos financeiros realistas.
+Isso permite estudar engenharia de dados, simulacao, comportamento financeiro e deteccao de anomalias dentro do mesmo projeto.
 
----
+## O que o sistema entrega hoje
 
-# Objetivos do Projeto
+O projeto esta dividido em duas grandes etapas:
 
-Os principais objetivos do projeto são:
+1. Geracao de dados sinteticos
+2. Analise de anomalias
 
-* Gerar um **dataset financeiro sintético**
-* Simular **contas bancárias com perfis de comportamento**
-* Simular **transações financeiras diárias**
-* Injetar **comportamentos anômalos**
-* Construir **ferramentas para detecção de anomalias**
+Na pratica, o fluxo completo fica assim:
 
-O dataset conterá informações como:
+1. o sistema cria contas com salario, saldo inicial, cidade, horario de atividade e categorias favoritas de gasto
+2. o sistema simula varios dias de movimentacao para cada conta
+3. cada transacao recebe informacoes como valor, tipo, localizacao, saldo antes e saldo depois
+4. algumas transacoes sao geradas com comportamento mais estranho para representar fraude ou anomalia
+5. o pipeline analitico le o CSV gerado
+6. o pipeline cria features de comportamento por conta
+7. o modelo Isolation Forest calcula um score de anomalia
+8. o sistema exporta um CSV final com ranking das transacoes mais suspeitas
 
-* contas
-* transações
-* timestamps de transações
-* tipos de transação
-* localização das transações
-* saldos das contas
-* indicadores de fraude
+## Estrutura principal do projeto
 
----
-
-# Estrutura do Dataset
-
-O dataset simulado conterá duas entidades principais:
-
-## Contas
-
-Cada conta representa um usuário bancário simulado com características comportamentais.
-
-Exemplo de campos:
-
-* `account_id`
-* `home_city`
-* `initial_balance`
-* `current_balance`
-* `salary`
-* `activity_level`
-* `transactions_per_day`
-* `favorite_categories`
-* `active_hour_start`
-* `active_hour_end`
-
-Esses atributos definem **como a conta se comporta financeiramente**.
-
----
-
-## Transações
-
-As transações simulam a atividade financeira de cada conta ao longo do tempo.
-
-Exemplo de campos:
-
-* `transaction_id`
-* `account_id`
-* `timestamp`
-* `transaction_type`
-* `amount`
-* `balance_before`
-* `balance_after`
-* `merchant_category`
-* `transaction_channel`
-* `location`
-* `is_fraud`
-* `origin_account`
-* `destination_account`
-
----
-
-# Estágio Atual de Desenvolvimento
-
-O projeto atualmente está na **fase de geração de dados**.
-
-O primeiro módulo implementado é:
-
-### Gerador de Contas (Account Generator)
-
-Este módulo cria contas bancárias sintéticas com atributos realistas.
-
-Cada conta gerada possui:
-
-* saldo inicial baseado no salário
-* nível de atividade financeira
-* frequência de transações por dia
-* categorias de gasto preferidas
-* horário ativo para transações
-* cidade de origem
-
-Exemplo de conta gerada:
-
-```json
-{
-  "account_id": 1,
-  "home_city": "Aracaju",
-  "initial_balance": 5400,
-  "current_balance": 5400,
-  "salary": 3200,
-  "activity_level": "medium",
-  "transactions_per_day": 5,
-  "favorite_categories": {
-    "groceries": 0.52,
-    "transport": 0.31,
-    "restaurant": 0.17
-  },
-  "active_hour_start": 8,
-  "active_hour_end": 20
-}
+```text
+financial-intelligence-system/
+  data/
+    raw/
+      generated/
+    reports/
+  src/
+    dataset/
+    features/
+    generators/
+    models/
+    reporting/
+    utils/
+  main.py
+  run_generation.py
+  requirements.txt
 ```
 
----
+## O papel de cada parte
 
-# Estrutura do Projeto
+- `run_generation.py`
+  Script principal para gerar contas e transacoes sinteticas.
 
-financial-intelligence-system/
+- `main.py`
+  Script principal para carregar o dataset, criar features, rodar o modelo e salvar o relatorio.
 
-data/
-    generated/
+- `src/config.py`
+  Centraliza caminhos padrao e configuracoes de geracao e analise.
 
-src/
-    generators/
-        account_generator.py
-        transaction_generator.py
+- `src/generators/account_generator.py`
+  Gera o perfil das contas simuladas.
 
-README.md
+- `src/generators/transaction_generator.py`
+  Gera as transacoes e atualiza os saldos ao longo do tempo.
 
----
+- `src/dataset/load_dataset.py`
+  Carrega o CSV e valida as colunas obrigatorias.
 
-# Próximos Passos de Desenvolvimento
+- `src/features/feature_engineering.py`
+  Converte as transacoes em variaveis uteis para o modelo.
 
-O próximo módulo a ser implementado é o **Gerador de Transações (Transaction Generator)**, responsável por simular a atividade financeira diária.
+- `src/models/anomaly_detection.py`
+  Executa o Isolation Forest e produz os scores de anomalia.
 
-O gerador irá:
+- `src/reporting/report_generator.py`
+  Organiza o resumo final exibido no terminal e salva o CSV do relatorio.
 
-* simular transações ao longo de **6 meses**
-* gerar **2 a 10 transações por dia por conta**
-* atualizar o saldo das contas
-* simular categorias de comércio
-* simular canais de transação
-* gerar timestamps das transações
-* inserir padrões anômalos
+## Como a geracao funciona
 
-Isso produzirá um dataset com **milhares de transações financeiras realistas**.
+Quando voce roda `python run_generation.py`, o projeto executa este processo:
 
----
+1. cria as pastas necessarias em `data/`
+2. monta uma configuracao com quantidade de contas, meses, taxa de fraude e semente aleatoria
+3. gera uma lista de contas sinteticas
+4. para cada conta, simula um periodo completo de movimentacoes
+5. inclui depositos de salario, transferencias, compras, pagamentos e saques
+6. atualiza o saldo da conta a cada transacao
+7. valida se nao existem erros como IDs duplicados ou saldo inconsistente
+8. salva:
+   - `data/raw/generated/accounts.csv`
+   - `data/raw/generated/transactions.csv`
 
-# Trabalhos Futuros
+## Como a analise funciona
 
-Melhorias planejadas incluem:
+Quando voce roda `python main.py`, o projeto executa este processo:
 
-* módulo de injeção de anomalias
-* análise estatística do comportamento financeiro
-* modelos de detecção de anomalias
-* dashboards de visualização
-* experimentos de detecção de fraude
+1. procura um dataset para analisar
+2. valida a estrutura do arquivo
+3. converte colunas para tipos corretos
+4. cria features como:
+   - hora da transacao
+   - dia da semana
+   - valor relativo ao saldo
+   - valor comparado com a media da conta
+   - tempo entre transacoes
+   - localizacao incomum
+   - horario incomum
+5. aplica o Isolation Forest
+6. gera:
+   - `anomaly_score`
+   - `raw_anomaly_score`
+   - `is_anomaly`
+7. salva o resultado em `data/reports/anomaly_report.csv`
+8. imprime no terminal um resumo em portugues com o ranking das transacoes mais suspeitas
 
----
+## Como rodar
 
-# Tecnologias
+### 1. Instalar dependencias
 
-O projeto atualmente está sendo implementado utilizando:
+```bash
+pip install -r requirements.txt
+```
 
-* Python
-* Simulação de dados com geração aleatória
-* Geração estruturada de dataset
+### 2. Gerar os dados sinteticos
 
-Ferramentas futuras podem incluir:
+```bash
+python run_generation.py --accounts 150 --months 6 --seed 42
+```
 
-* Pandas
-* PostgreSQL
-* Modelos de Machine Learning
-* Ferramentas de visualização de dados
+### 3. Rodar a analise
 
----
+```bash
+python main.py
+```
 
-# Autor
+### 4. Rodar com um CSV proprio
+
+```bash
+python main.py --input-path data/raw/financial_transactions.csv --top-n 15
+```
+
+## O que existe dentro dos CSVs
+
+### Arquivo de contas
+
+Cada conta possui informacoes como:
+
+- `account_id`
+- `home_city`
+- `initial_balance`
+- `current_balance`
+- `salary`
+- `salary_day`
+- `activity_level`
+- `transactions_per_day`
+- `favorite_categories`
+- `active_hour_start`
+- `active_hour_end`
+
+### Arquivo de transacoes
+
+Cada transacao possui informacoes como:
+
+- `transaction_id`
+- `account_id`
+- `timestamp`
+- `transaction_type`
+- `amount`
+- `balance_before`
+- `balance_after`
+- `merchant_category`
+- `transaction_channel`
+- `location`
+- `is_fraud`
+- `origin_account`
+- `destination_account`
+
+## Saida do terminal
+
+Os scripts agora exibem saidas em portugues e em formato mais organizado.
+
+Na geracao, o terminal mostra:
+
+- periodo simulado
+- quantidade de contas
+- quantidade de transacoes
+- quantidade de transacoes marcadas como fraude
+- caminhos dos arquivos gerados
+- proximo comando sugerido
+
+Na analise, o terminal mostra:
+
+- dataset utilizado
+- transacoes analisadas
+- contas analisadas
+- quantidade de anomalias detectadas
+- fraudes rotuladas no dataset
+- fraudes rotuladas encontradas pelo modelo
+- caminho do CSV final
+- ranking das transacoes mais suspeitas
+
+## Observacao importante sobre o codigo
+
+Os nomes de funcoes, classes e variaveis continuam em ingles para manter um padrao tecnico comum em projetos de programacao, mas:
+
+- as mensagens de terminal estao em portugues
+- os comentarios do codigo foram ampliados para estudo
+- este README foi escrito de forma mais didatica
+
+## Testes e validacoes
+
+O projeto possui testes em `tests/test_pipeline_integrity.py` para validar pontos importantes, como:
+
+- saldo final das contas batendo com as transacoes
+- consistencia da categoria `transfer` em `pix_out`
+- comportamento seguro do modelo em datasets muito pequenos
+
+## Autor
 
 Murilo Pedral
-
-Estudante de Ciência da Computação explorando simulação de dados, detecção de anomalias e modelagem de dados financeiros.

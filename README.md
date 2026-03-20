@@ -1,201 +1,227 @@
 # Financial Intelligence System
 
-## Overview
+Synthetic financial data generation and anomaly detection project for suspicious transaction analysis.
 
-The **Financial Intelligence System** is a project designed to simulate financial behavior and detect anomalies in transaction data.
+## Project idea
 
-The goal is to build a synthetic financial dataset and develop analytical tools capable of identifying unusual patterns such as fraudulent transactions or abnormal account behavior.
+This project simulates a fictional banking environment and then applies data analysis and machine learning to detect unusual financial behavior.
 
-This project is being developed as a **learning-oriented system**, focusing on:
+Instead of depending on real banking data, the system creates:
 
-* Data simulation
-* Behavioral modeling
-* Anomaly detection
-* Financial transaction analysis
+1. synthetic bank accounts with behavior profiles
+2. realistic transaction histories
+3. injected anomalous behavior
+4. a final ranked report of suspicious transactions
 
-The system generates synthetic banking data including **accounts and transactions** that mimic realistic financial behavior.
+The result is a practical end-to-end project that combines data generation, feature engineering, anomaly detection, and reporting.
 
----
+## What the system delivers today
 
-# Project Goals
+The repository currently has two main stages:
 
-The main goals of the project are:
+1. Synthetic data generation
+2. Anomaly detection analysis
 
-* Generate a **synthetic financial dataset**
-* Simulate **bank accounts with behavioral profiles**
-* Simulate **daily financial transactions**
-* Inject **anomalous behavior**
-* Build **tools for anomaly detection**
+The end-to-end flow works like this:
 
-The dataset will contain information such as:
+1. the system creates accounts with salary, balance, city, active hours, and favorite spending categories
+2. the system simulates daily transactions for each account
+3. each transaction receives amount, type, location, balance before, and balance after
+4. some transactions are generated with abnormal behavior to mimic suspicious activity
+5. the analytical pipeline loads the CSV
+6. the pipeline builds behavioral features per account
+7. Isolation Forest calculates anomaly scores
+8. the system exports a final CSV with the ranked suspicious transactions
 
-* accounts
-* transactions
-* transaction timestamps
-* transaction types
-* transaction locations
-* account balances
-* fraud indicators
+## Main project structure
 
----
-
-# Dataset Design
-
-The simulated dataset will contain two main entities:
-
-## Accounts
-
-Each account represents a simulated bank user with behavioral characteristics.
-
-Example fields:
-
-* `account_id`
-* `home_city`
-* `initial_balance`
-* `current_balance`
-* `salary`
-* `activity_level`
-* `transactions_per_day`
-* `favorite_categories`
-* `active_hour_start`
-* `active_hour_end`
-
-These attributes define **how the account behaves financially**.
-
----
-
-## Transactions
-
-Transactions simulate the financial activity of each account over time.
-
-Example fields:
-
-* `transaction_id`
-* `account_id`
-* `timestamp`
-* `transaction_type`
-* `amount`
-* `balance_before`
-* `balance_after`
-* `merchant_category`
-* `transaction_channel`
-* `location`
-* `is_fraud`
-* `origin_account`
-* `destination_account`
-
----
-
-# Current Development Stage
-
-The project is currently in the **data generation phase**.
-
-The first module implemented is:
-
-### Account Generator
-
-This module creates synthetic bank accounts with realistic attributes.
-
-Each generated account includes:
-
-* salary-based balance
-* financial activity level
-* daily transaction frequency
-* preferred spending categories
-* active hours for transactions
-* home city
-
-Example generated account:
-
-```json
-{
-  "account_id": 1,
-  "home_city": "Aracaju",
-  "initial_balance": 5400,
-  "current_balance": 5400,
-  "salary": 3200,
-  "activity_level": "medium",
-  "transactions_per_day": 5,
-  "favorite_categories": {
-    "groceries": 0.52,
-    "transport": 0.31,
-    "restaurant": 0.17
-  },
-  "active_hour_start": 8,
-  "active_hour_end": 20
-}
-```
-
----
-
-# Project Structure
-
-```
+```text
 financial-intelligence-system/
-
-data/
-    generated/
-
-src/
+  data/
+    raw/
+      generated/
+    reports/
+  src/
+    dataset/
+    features/
     generators/
-
-        account_generator.py
-        transaction_generator.py
-
-README.md
+    models/
+    reporting/
+    utils/
+  main.py
+  run_generation.py
+  requirements.txt
 ```
 
----
+## What each part does
 
-# Next Development Steps
+- `run_generation.py`
+  Main script for synthetic account and transaction generation.
 
-The next module to be implemented is the **Transaction Generator**, responsible for simulating daily financial activity.
+- `main.py`
+  Main script for dataset loading, feature engineering, anomaly detection, and reporting.
 
-The generator will:
+- `src/config.py`
+  Central place for paths and runtime configuration.
 
-* simulate transactions over **6 months**
-* generate **2 to 10 transactions per day per account**
-* update account balances
-* simulate merchant categories
-* simulate transaction channels
-* generate transaction timestamps
-* inject anomalous patterns
+- `src/generators/account_generator.py`
+  Creates synthetic account profiles.
 
-This will produce a dataset with **thousands of realistic financial transactions**.
+- `src/generators/transaction_generator.py`
+  Simulates transactions and account balance evolution over time.
 
----
+- `src/dataset/load_dataset.py`
+  Loads CSV files and validates the required schema.
 
-# Future Work
+- `src/features/feature_engineering.py`
+  Builds model-ready features from raw transactions.
 
-Planned improvements include:
+- `src/models/anomaly_detection.py`
+  Runs Isolation Forest and produces anomaly scores.
 
-* anomaly injection module
-* statistical analysis of financial behavior
-* anomaly detection models
-* visualization dashboards
-* fraud detection experiments
+- `src/reporting/report_generator.py`
+  Formats the terminal summary and exports the final report.
 
----
+## How generation works
 
-# Technologies
+When you run `python run_generation.py`, the project does the following:
 
-The project is currently implemented using:
+1. creates the required folders inside `data/`
+2. builds a configuration object with account count, months, fraud rate, and seed
+3. generates synthetic account profiles
+4. simulates a full period of transactions for each account
+5. includes salary deposits, transfers, purchases, bill payments, and withdrawals
+6. updates the account balance after every transaction
+7. validates the generated datasets for duplicate IDs and balance consistency
+8. saves:
+   - `data/raw/generated/accounts.csv`
+   - `data/raw/generated/transactions.csv`
 
-* Python
-* Randomized data simulation
-* Structured dataset generation
+## How analysis works
 
-Future tools may include:
+When you run `python main.py`, the project does the following:
 
-* Pandas
-* PostgreSQL
-* Machine Learning models
-* Data visualization tools
+1. finds the dataset to analyze
+2. validates the file structure
+3. converts columns to the correct data types
+4. creates features such as:
+   - transaction hour
+   - day of week
+   - amount relative to the balance
+   - amount compared to the account mean
+   - time between transactions
+   - unusual location
+   - unusual hour
+5. applies Isolation Forest
+6. generates:
+   - `anomaly_score`
+   - `raw_anomaly_score`
+   - `is_anomaly`
+7. saves the result to `data/reports/anomaly_report.csv`
+8. prints a terminal summary with the most suspicious transactions
 
----
+## How to run
 
-# Author
+### 1. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Generate synthetic data
+
+```bash
+python run_generation.py --accounts 150 --months 6 --seed 42
+```
+
+### 3. Run anomaly analysis
+
+```bash
+python main.py
+```
+
+### 4. Run with a custom CSV
+
+```bash
+python main.py --input-path data/raw/financial_transactions.csv --top-n 15
+```
+
+## What is inside the CSV files
+
+### Accounts file
+
+Each account includes fields such as:
+
+- `account_id`
+- `home_city`
+- `initial_balance`
+- `current_balance`
+- `salary`
+- `salary_day`
+- `activity_level`
+- `transactions_per_day`
+- `favorite_categories`
+- `active_hour_start`
+- `active_hour_end`
+
+### Transactions file
+
+Each transaction includes fields such as:
+
+- `transaction_id`
+- `account_id`
+- `timestamp`
+- `transaction_type`
+- `amount`
+- `balance_before`
+- `balance_after`
+- `merchant_category`
+- `transaction_channel`
+- `location`
+- `is_fraud`
+- `origin_account`
+- `destination_account`
+
+## Terminal output
+
+The scripts now print clearer terminal summaries.
+
+Generation output includes:
+
+- simulated period
+- generated accounts
+- generated transactions
+- transactions labeled as fraud
+- generated file paths
+- next suggested command
+
+Analysis output includes:
+
+- input dataset path
+- analyzed transactions
+- analyzed accounts
+- detected anomalies
+- labeled frauds in the dataset
+- labeled frauds found by the model
+- final report path
+- ranked suspicious transactions
+
+## Important note about the codebase
+
+Function names, classes, and variable names stay in English to preserve a common technical convention, but:
+
+- terminal messages are in Portuguese
+- code comments were expanded for study purposes
+- the documentation is now more didactic
+
+## Tests and validation
+
+The project includes tests in `tests/test_pipeline_integrity.py` to validate:
+
+- account final balance consistency
+- `pix_out` category consistency
+- safe anomaly detection behavior on very small datasets
+
+## Author
 
 Murilo Pedral
-
-Computer Science student exploring data simulation, anomaly detection and financial data modeling.
