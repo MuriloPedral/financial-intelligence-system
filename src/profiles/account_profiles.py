@@ -1,28 +1,20 @@
-# Permite usar anotacoes de tipo modernas sem resolver tudo imediatamente.
 from __future__ import annotations
 
-# Numpy ajuda no tratamento de nulos e razoes numericas.
 import numpy as np
-# Pandas organiza o historico de transacoes por conta.
 import pandas as pd
 
 
-# Categorias com maior tendencia a gasto por impulso.
 IMPULSIVE_CATEGORIES = {"restaurant", "entertainment", "shopping"}
 
 
 def _normalize_distribution(series: pd.Series) -> dict[str, float]:
-    # Um conjunto vazio nao tem distribuicao para calcular.
     if series.empty:
         return {}
 
-    # Converte a soma total para float para evitar problemas de tipo.
     total = float(series.sum())
-    # Evita divisao por zero quando todos os valores sao nulos.
     if total <= 0:
         return {}
 
-    # Normaliza a participacao de cada item e arredonda para facilitar leitura.
     return {
         str(index): round(float(value) / total, 4)
         for index, value in series.items()
@@ -30,16 +22,12 @@ def _normalize_distribution(series: pd.Series) -> dict[str, float]:
 
 
 def _top_hours(hours: pd.Series, top_n: int = 3) -> list[int]:
-    # Sem horario observado, nao ha como apontar faixa preferida.
     if hours.empty:
         return []
-
-    # Conta a frequencia de cada hora e pega as mais comuns.
     return [int(hour) for hour in hours.value_counts().head(top_n).index.tolist()]
 
 
 def _estimate_monthly_income(account_transactions: pd.DataFrame, period_days: int) -> float:
-    # O salario explicito e a melhor aproximacao de renda mensal.
     salary_transactions = account_transactions.loc[
         account_transactions["transaction_type"] == "salary_deposit",
         "amount",
@@ -47,7 +35,6 @@ def _estimate_monthly_income(account_transactions: pd.DataFrame, period_days: in
     if not salary_transactions.empty:
         return round(float(salary_transactions.median()), 2)
 
-    # Como fallback, usa o fluxo medio de entradas proporcionalizado para 30 dias.
     incoming_transactions = account_transactions.loc[
         account_transactions["balance_after"] > account_transactions["balance_before"],
         "amount",
@@ -55,36 +42,26 @@ def _estimate_monthly_income(account_transactions: pd.DataFrame, period_days: in
     if incoming_transactions.empty:
         return 0.0
 
-    # Projeta a entrada observada para uma visao mensal aproximada.
     estimated_income = float(incoming_transactions.sum()) * (30.0 / max(1, period_days))
     return round(estimated_income, 2)
 
 
 def _build_single_account_profile(account_transactions: pd.DataFrame) -> dict[str, object]:
-    # Ordena o historico para preservar o contexto temporal da conta.
     ordered_transactions = account_transactions.sort_values("timestamp").reset_index(drop=True)
-
-    # Calcula o periodo total observado para normalizar frequencias.
     normalized_days = ordered_transactions["timestamp"].dt.normalize()
     period_days = max(1, int((normalized_days.max() - normalized_days.min()).days) + 1)
     period_weeks = max(1.0, period_days / 7.0)
-
-    # Separa os horarios e os intervalos entre transacoes.
     transaction_hours = ordered_transactions["timestamp"].dt.hour
     transaction_gaps = ordered_transactions["timestamp"].diff().dt.total_seconds().div(60).dropna()
-
-    # Usa a comparacao dos saldos para identificar saidas de dinheiro.
     spending_transactions = ordered_transactions.loc[
         ordered_transactions["balance_after"] < ordered_transactions["balance_before"]
     ].copy()
-
-    # Mede o peso de cada transacao em relacao ao saldo anterior.
     amount_to_balance_ratio = (
         ordered_transactions["amount"]
         / ordered_transactions["balance_before"].replace(0, np.nan)
     ).replace([np.inf, -np.inf], np.nan)
 
-    # Calcula distribuicoes comportamentais basicas para uso futuro.
+    # Distribuicoes comportamentais
     transaction_type_distribution = _normalize_distribution(
         ordered_transactions["transaction_type"].value_counts(),
     )
@@ -101,7 +78,7 @@ def _build_single_account_profile(account_transactions: pd.DataFrame) -> dict[st
         spending_transactions["merchant_category"].value_counts(),
     )
 
-    # Descobre os elementos mais recorrentes do comportamento da conta.
+    # Padroes principais
     most_common_transaction_type = (
         ordered_transactions["transaction_type"].mode().iat[0]
         if not ordered_transactions["transaction_type"].mode().empty
@@ -119,7 +96,7 @@ def _build_single_account_profile(account_transactions: pd.DataFrame) -> dict[st
         else "no_spending_pattern"
     )
 
-    # Estima renda mensal e gasto mensal medio para recomendacoes futuras.
+    # Indicadores financeiros
     estimated_monthly_income = _estimate_monthly_income(ordered_transactions, period_days)
     average_monthly_spend = round(
         float(spending_transactions["amount"].sum()) * (30.0 / max(1, period_days)),
@@ -130,14 +107,11 @@ def _build_single_account_profile(account_transactions: pd.DataFrame) -> dict[st
         if estimated_monthly_income > 0
         else 0.0
     )
-
-    # Mede o quanto categorias mais impulsivas pesam no total gasto.
     impulsive_spending_share = round(
         sum(spending_category_amount_share.get(category, 0.0) for category in IMPULSIVE_CATEGORIES),
         4,
     )
 
-    # Monta o perfil final em formato simples para ser reutilizado em outros modulos.
     return {
         "account_id": str(ordered_transactions["account_id"].iat[0]),
         "analysis_start": ordered_transactions["timestamp"].min(),
@@ -178,27 +152,20 @@ def _build_single_account_profile(account_transactions: pd.DataFrame) -> dict[st
 
 
 def build_account_profiles(transactions: pd.DataFrame) -> pd.DataFrame:
-    # Sem transacoes nao existe historico suficiente para construir perfis.
     if transactions.empty:
         return pd.DataFrame()
 
-    # Ordena o dataset inteiro para manter o processamento por conta consistente.
     ordered_transactions = transactions.copy().sort_values(["account_id", "timestamp"]).reset_index(drop=True)
-
-    # Acumula um perfil por conta.
     profile_rows = []
     for _, account_transactions in ordered_transactions.groupby("account_id", sort=False):
         profile_rows.append(_build_single_account_profile(account_transactions))
 
-    # Devolve uma tabela reutilizavel em todo o restante do pipeline.
     return pd.DataFrame(profile_rows).sort_values("account_id").reset_index(drop=True)
 
 
 def build_account_profile_lookup(account_profiles: pd.DataFrame) -> dict[str, dict[str, object]]:
-    # Um DataFrame vazio gera um lookup vazio, o que facilita o uso pelos outros modulos.
     if account_profiles.empty:
         return {}
 
-    # Converte o DataFrame em dicionario indexado por account_id.
     indexed_profiles = account_profiles.set_index("account_id", drop=False)
     return indexed_profiles.to_dict(orient="index")
