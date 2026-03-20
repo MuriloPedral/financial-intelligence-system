@@ -25,9 +25,60 @@ from src.models.anomaly_detection import detect_anomalies
 from src.profiles.account_profiles import build_account_profiles
 # Importa a camada de recomendacoes financeiras.
 from src.recommendations.financial_recommendations import build_financial_recommendations
+# Importa a organizacao final dos relatorios exportados.
+from src.reporting.report_generator import build_anomaly_report_frame, build_recommendations_report_frame
 
 
 class PipelineIntegrityTests(unittest.TestCase):
+    def test_anomaly_report_frame_exports_only_detected_anomalies(self) -> None:
+        # Monta um pequeno conjunto com uma linha normal e uma linha anomala.
+        scored_transactions = pd.DataFrame(
+            [
+                {
+                    "transaction_id": "TX000000001",
+                    "account_id": "A00001",
+                    "timestamp": "2026-01-01T10:00:00",
+                    "transaction_type": "card_purchase",
+                    "merchant_category": "groceries",
+                    "transaction_channel": "debit_card",
+                    "location": "Aracaju",
+                    "amount": 80.0,
+                    "balance_before": 1000.0,
+                    "balance_after": 920.0,
+                    "anomaly_score": 0.10,
+                    "raw_anomaly_score": 0.01,
+                    "anomaly_explanation": "",
+                    "explanation_count": 0,
+                    "is_anomaly": 0,
+                },
+                {
+                    "transaction_id": "TX000000002",
+                    "account_id": "A00001",
+                    "timestamp": "2026-01-02T02:00:00",
+                    "transaction_type": "online_purchase",
+                    "merchant_category": "travel",
+                    "transaction_channel": "internet_banking",
+                    "location": "Sao Paulo",
+                    "amount": 900.0,
+                    "balance_before": 920.0,
+                    "balance_after": 20.0,
+                    "anomaly_score": 0.99,
+                    "raw_anomaly_score": 0.91,
+                    "anomaly_explanation": "Valor muito acima da media.",
+                    "explanation_count": 1,
+                    "is_anomaly": 1,
+                },
+            ],
+        )
+
+        # Monta o relatorio enxuto.
+        anomaly_report = build_anomaly_report_frame(scored_transactions)
+
+        # Confirma que apenas a linha anomala foi exportada.
+        self.assertEqual(len(anomaly_report), 1)
+        self.assertEqual(anomaly_report.iloc[0]["transaction_id"], "TX000000002")
+        self.assertIn("anomaly_rank", anomaly_report.columns)
+
     def test_account_profiles_capture_financial_behavior(self) -> None:
         # Monta um pequeno historico manual para validar o perfil financeiro.
         transactions = pd.DataFrame(
@@ -328,6 +379,51 @@ class PipelineIntegrityTests(unittest.TestCase):
         self.assertIn("45%", recommendation_row["recommendations_text"])
         self.assertIn("despesas impulsivas", recommendation_row["recommendations_text"])
         self.assertIn("renda estimada", recommendation_row["recommendations_text"])
+
+    def test_recommendation_report_frame_filters_non_actionable_rows(self) -> None:
+        # Monta um conjunto com uma conta acionavel e outra apenas com mensagem de equilibrio.
+        recommendations = pd.DataFrame(
+            [
+                {
+                    "account_id": "A00010",
+                    "top_spending_category": "travel",
+                    "top_spending_share": 0.62,
+                    "estimated_monthly_income": 3000.0,
+                    "average_monthly_spend": 3600.0,
+                    "spend_to_income_ratio": 1.20,
+                    "impulsive_spending_share": 0.45,
+                    "recommendations": ["Teste 1", "Teste 2"],
+                    "recommendations_text": "Teste 1 | Teste 2",
+                    "recommendation_count": 2,
+                    "actionable_recommendation_count": 2,
+                    "has_actionable_recommendation": 1,
+                    "recommendation_priority": 5.0,
+                },
+                {
+                    "account_id": "A00011",
+                    "top_spending_category": "groceries",
+                    "top_spending_share": 0.20,
+                    "estimated_monthly_income": 3000.0,
+                    "average_monthly_spend": 1800.0,
+                    "spend_to_income_ratio": 0.60,
+                    "impulsive_spending_share": 0.10,
+                    "recommendations": ["Seu padrao financeiro parece equilibrado."],
+                    "recommendations_text": "Seu padrao financeiro parece equilibrado.",
+                    "recommendation_count": 1,
+                    "actionable_recommendation_count": 0,
+                    "has_actionable_recommendation": 0,
+                    "recommendation_priority": 0.0,
+                },
+            ],
+        )
+
+        # Monta o relatorio de recomendacoes exportavel.
+        recommendation_report = build_recommendations_report_frame(recommendations)
+
+        # Confirma que apenas a recomendacao acionavel permaneceu.
+        self.assertEqual(len(recommendation_report), 1)
+        self.assertEqual(recommendation_report.iloc[0]["account_id"], "A00010")
+        self.assertNotIn("recommendations", recommendation_report.columns)
 
 
 if __name__ == "__main__":

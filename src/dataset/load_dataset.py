@@ -7,8 +7,8 @@ from pathlib import Path
 # Pandas le e trata o CSV de transacoes.
 import pandas as pd
 
-# Importa os caminhos padrao definidos na configuracao central.
-from src.config import DEFAULT_PUBLIC_DATASET_PATH, DEFAULT_TRANSACTIONS_PATH
+# Importa o caminho padrao das transacoes sinteticas.
+from src.config import DEFAULT_TRANSACTIONS_PATH
 
 
 # Lista de colunas minimas que o pipeline precisa para funcionar.
@@ -28,26 +28,13 @@ REQUIRED_TRANSACTION_COLUMNS = {
 }
 
 
-def resolve_dataset_path(input_path: str | Path | None = None) -> Path:
-    # Quando o usuario passa um caminho manualmente, prioriza esse arquivo.
-    if input_path:
-        resolved_path = Path(input_path)
-        # Interrompe cedo se o arquivo informado nao existir.
-        if not resolved_path.exists():
-            msg = f"Arquivo de dataset nao encontrado: {resolved_path}"
-            raise FileNotFoundError(msg)
-        return resolved_path
-
-    # Caso nao exista caminho informado, tenta os caminhos padrao conhecidos.
-    for candidate in (DEFAULT_PUBLIC_DATASET_PATH, DEFAULT_TRANSACTIONS_PATH):
-        if candidate.exists():
-            return candidate
+def resolve_dataset_path() -> Path:
+    # O pipeline atual trabalha apenas com o dataset sintetico gerado internamente.
+    if DEFAULT_TRANSACTIONS_PATH.exists():
+        return DEFAULT_TRANSACTIONS_PATH
 
     # Se nada for encontrado, informa como resolver.
-    msg = (
-        "Nenhum dataset de entrada foi encontrado. Gere um dataset sintetico com "
-        "'python run_generation.py' ou informe --input-path."
-    )
+    msg = "Nenhum dataset sintetico foi encontrado. Gere os dados com 'python run_generation.py' antes de rodar a analise."
     raise FileNotFoundError(msg)
 
 
@@ -68,9 +55,9 @@ def validate_transaction_dataset(dataset: pd.DataFrame) -> None:
         raise ValueError(msg)
 
 
-def load_transaction_dataset(input_path: str | Path | None = None) -> tuple[pd.DataFrame, Path]:
+def load_transaction_dataset() -> tuple[pd.DataFrame, Path]:
     # Resolve qual arquivo sera usado na execucao.
-    dataset_path = resolve_dataset_path(input_path)
+    dataset_path = resolve_dataset_path()
     # Le o CSV bruto do disco.
     dataset = pd.read_csv(dataset_path)
     # Valida a estrutura minima antes de continuar.

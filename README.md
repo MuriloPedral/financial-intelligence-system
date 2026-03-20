@@ -1,55 +1,32 @@
 # Financial Intelligence System
 
-Synthetic financial data, behavioral analysis, anomaly explainability, and account-level financial recommendations.
+Synthetic data and financial intelligence project for simulating accounts, analyzing transactions, detecting suspicious behavior, and generating account-level recommendations.
 
 ## Overview
 
-This project simulates a plausible financial environment and turns transaction history into actionable intelligence.
+This project creates a synthetic financial environment and applies behavioral analytics on top of it. The operational flow now relies only on internally generated data.
 
 The system currently does four main things:
 
-1. generates synthetic bank accounts with behavioral patterns
-2. generates transaction histories with normal and suspicious behavior
-3. detects anomalous transactions with Isolation Forest
-4. produces anomaly explanations and personalized financial recommendations
+1. generates synthetic bank accounts with financial behavior patterns
+2. generates synthetic transaction histories with normal and suspicious activity
+3. detects and explains anomalous transactions
+4. generates personalized financial recommendations per account
 
-The result is no longer just an anomaly detector. It is a small financial intelligence platform built around simulated data.
+## System flow
 
-## End-to-end pipeline
+The regular workflow happens in two commands:
 
-When the full flow runs, the system follows this order:
+1. `python run_generation.py`
+   generates synthetic accounts and transactions into `data/raw/generated/`
 
-1. creates synthetic accounts with salary, balance, city, active hours, and spending preferences
-2. simulates transaction history for each account
-3. validates dataset integrity
-4. loads the transaction dataset
-5. builds modeling features
-6. builds an explicit financial profile for each account
-7. runs Isolation Forest
-8. explains each anomaly by comparing the transaction to the account profile
-9. creates personalized financial recommendations per account
-10. exports reports and prints a structured terminal summary
+2. `python main.py`
+   loads only the internally generated synthetic dataset, builds features, builds account profiles, detects anomalies, explains them, and exports the analytical reports
 
-## What the project delivers
+Important:
 
-### Synthetic data generation
-
-- account generation with income, balance, and spending preferences
-- transaction generation with salary deposits, PIX transfers, purchases, bill payments, and withdrawals
-- suspicious behavior injection for model evaluation
-
-### Behavioral analysis
-
-- account-level feature engineering
-- anomaly detection with Isolation Forest
-- normalized anomaly scoring
-- ranked suspicious transaction output
-
-### Financial intelligence
-
-- explicit financial profiles per account
-- readable anomaly explanations
-- simple personalized financial recommendations
+- the main flow no longer accepts external transaction CSV files
+- analysis always uses `data/raw/generated/transactions.csv`
 
 ## Main structure
 
@@ -58,7 +35,12 @@ financial-intelligence-system/
   data/
     raw/
       generated/
+        accounts.csv
+        transactions.csv
     reports/
+      account_profiles.csv
+      anomaly_report.csv
+      financial_recommendations.csv
   src/
     dataset/
     explainability/
@@ -71,125 +53,106 @@ financial-intelligence-system/
     utils/
   main.py
   run_generation.py
-  requirements.txt
+  DOCUMENTO-DO-PROJETO.md
 ```
 
-## Module responsibilities
+## What each stage does
 
-- `run_generation.py`
-  Orchestrates synthetic account and transaction generation.
+### 1. Synthetic generation
 
-- `main.py`
-  Orchestrates the full analytical pipeline: loading, features, profiles, model, explanations, recommendations, and reports.
+In [run_generation.py](C:/Users/muril/Códigos/financial-intelligence-system/run_generation.py), the system:
 
-- `src/config.py`
-  Central place for paths and runtime configuration.
+1. creates accounts with salary, initial balance, city, favorite categories, and active hours
+2. simulates salary deposits, PIX transfers, purchases, bill payments, and withdrawals
+3. injects suspicious behavior in a controlled way
+4. validates IDs, balances, and continuity
+5. saves the raw CSV files
 
-- `src/generators/account_generator.py`
-  Builds the base synthetic account profile.
+### 2. Financial analysis
 
-- `src/generators/transaction_generator.py`
-  Simulates transactions and preserves balance continuity.
+In [main.py](C:/Users/muril/Códigos/financial-intelligence-system/main.py), the system:
 
-- `src/dataset/load_dataset.py`
-  Loads CSV files and validates the minimum required schema.
-
-- `src/features/feature_engineering.py`
-  Builds model-ready behavioral features.
-
-- `src/profiles/account_profiles.py`
-  Builds the explicit financial profile for each account, including averages, standard deviation, frequency, category mix, and activity hours.
-
-- `src/models/anomaly_detection.py`
-  Runs Isolation Forest and returns anomaly score and anomaly flag.
-
-- `src/explainability/anomaly_explainer.py`
-  Explains each anomaly with readable rules based on the account profile.
-
-- `src/recommendations/financial_recommendations.py`
-  Generates personalized financial recommendations from the account behavior history.
-
-- `src/reporting/report_generator.py`
-  Exports the final CSV files and formats the Portuguese terminal output.
-
-## How generation works
-
-When you run `python run_generation.py`, the project:
-
-1. ensures the `data/` folders exist
-2. builds the generation configuration
-3. creates synthetic accounts
-4. simulates transactions within the selected period
-5. updates balances before and after each operation
-6. validates dataset integrity
-7. saves:
-   - `data/raw/generated/accounts.csv`
-   - `data/raw/generated/transactions.csv`
-
-## How analysis works
-
-When you run `python main.py`, the project:
-
-1. resolves the input dataset
-2. validates columns and types
-3. builds modeling features
-4. builds an account-level financial profile with:
-   - average transaction amount
-   - transaction amount standard deviation
-   - daily and weekly transaction frequency
-   - spending category distribution
-   - most common activity hours
-   - most common transaction types
+1. loads the internally generated dataset
+2. validates schema and data types
+3. builds behavioral features
+4. builds an explicit financial profile for each account
 5. runs Isolation Forest
-6. explains anomalous transactions with readable rules
-7. builds personalized financial recommendations
-8. saves:
-   - `data/reports/anomaly_report.csv`
-   - `data/reports/account_profiles.csv`
-   - `data/reports/financial_recommendations.csv`
+6. explains detected anomalies
+7. generates actionable financial recommendations
+8. exports the final analytical reports
 
-## Report outputs
+## Final reports
 
 ### `anomaly_report.csv`
 
-One row per analyzed transaction with anomaly score, anomaly flag, and explanation fields.
+This file is now cleaner:
 
-Important fields:
+- it contains only transactions classified as anomalies
+- it avoids exporting all internal model features
+- it prioritizes human-readable columns
 
+Key fields:
+
+- `anomaly_rank`
+- `transaction_id`
+- `account_id`
+- `timestamp`
+- `transaction_type`
+- `amount`
 - `anomaly_score`
-- `raw_anomaly_score`
-- `is_anomaly`
 - `anomaly_explanation`
-- `explanation_count`
 
 ### `account_profiles.csv`
 
-One row per account with the explicit financial profile.
+One consolidated row per account focused on financial behavior.
 
-Important fields:
+Key fields:
 
 - `mean_amount`
 - `amount_std`
 - `avg_daily_transactions`
 - `avg_weekly_transactions`
-- `transaction_type_distribution`
-- `spending_category_amount_share`
-- `usual_activity_hours`
 - `estimated_monthly_income`
 - `average_monthly_spend`
+- `spend_to_income_ratio`
+- `impulsive_spending_share`
 
 ### `financial_recommendations.csv`
 
-One row per account with personalized recommendation output.
+Now exports only actionable recommendations, avoiding repetitive rows with low practical value.
 
-Important fields:
+Key fields:
 
+- `recommendation_rank`
+- `account_id`
 - `top_spending_category`
-- `top_spending_share`
 - `spend_to_income_ratio`
-- `impulsive_spending_share`
+- `recommendation_priority`
 - `recommendations_text`
-- `recommendation_count`
+
+## Terminal output
+
+Terminal output was reorganized to be easier to read.
+
+Generation now shows:
+
+- simulated period
+- number of accounts
+- number of transactions
+- average transactions per account
+- labeled fraud count
+- generated file paths
+
+Analysis now shows:
+
+- analyzed source
+- analysis period
+- total volume analyzed
+- detected and explained anomalies
+- accounts with actionable recommendations
+- saved report paths
+- top anomalies
+- highlighted recommendations
 
 ## How to run
 
@@ -205,78 +168,35 @@ pip install -r requirements.txt
 python run_generation.py --accounts 150 --months 6 --seed 42
 ```
 
-### 3. Run the full analysis
+### 3. Run analysis
 
 ```bash
-python main.py
+python main.py --top-n 10
 ```
 
-### 4. Run with a custom CSV
+## Main modules
 
-```bash
-python main.py --input-path data/raw/financial_transactions.csv --top-n 15
-```
+- [src/generators/account_generator.py](C:/Users/muril/Códigos/financial-intelligence-system/src/generators/account_generator.py)
+  account generation
 
-This command is useful when you want to analyze an external CSV without relying on the locally generated synthetic dataset.
+- [src/generators/transaction_generator.py](C:/Users/muril/Códigos/financial-intelligence-system/src/generators/transaction_generator.py)
+  transaction generation
 
-## Minimum columns required for a custom transaction CSV
+- [src/features/feature_engineering.py](C:/Users/muril/Códigos/financial-intelligence-system/src/features/feature_engineering.py)
+  model features
 
-If you want to use your own file, the pipeline expects at least these columns:
+- [src/profiles/account_profiles.py](C:/Users/muril/Códigos/financial-intelligence-system/src/profiles/account_profiles.py)
+  account financial profiles
 
-- `transaction_id`
-- `account_id`
-- `timestamp`
-- `transaction_type`
-- `amount`
-- `balance_before`
-- `balance_after`
-- `merchant_category`
-- `transaction_channel`
-- `location`
-- `origin_account`
-- `destination_account`
+- [src/explainability/anomaly_explainer.py](C:/Users/muril/Códigos/financial-intelligence-system/src/explainability/anomaly_explainer.py)
+  anomaly explainability
 
-## Terminal output
+- [src/recommendations/financial_recommendations.py](C:/Users/muril/Códigos/financial-intelligence-system/src/recommendations/financial_recommendations.py)
+  financial recommendations
 
-The terminal experience was redesigned to be more explanatory.
+- [src/reporting/report_generator.py](C:/Users/muril/Códigos/financial-intelligence-system/src/reporting/report_generator.py)
+  report export and terminal formatting
 
-Generation output shows:
+## Main project document
 
-- simulated period
-- number of accounts
-- number of transactions
-- number of labeled frauds
-- generated file paths
-
-Analysis output shows:
-
-- analyzed dataset
-- number of accounts and transactions
-- generated financial profiles
-- detected and explained anomalies
-- paths for the three final reports
-- ranked suspicious transactions with explanation
-- highlighted financial recommendations
-
-## Codebase note
-
-Function names, classes, and variables remain in English to preserve a common technical convention, but:
-
-- terminal output is in Portuguese
-- code comments were expanded for study purposes
-- the documentation is now more process-oriented
-
-## Tests
-
-The project includes tests in `tests/test_pipeline_integrity.py` covering:
-
-- account and transaction balance consistency
-- `pix_out` category consistency
-- safe anomaly detection behavior on very small datasets
-- financial profile construction
-- anomaly explanation generation
-- recommendation generation
-
-## Author
-
-Murilo Pedral
+For a fuller explanation of purpose, scope, architecture, and limitations, see [DOCUMENTO-DO-PROJETO.md](C:/Users/muril/Códigos/financial-intelligence-system/DOCUMENTO-DO-PROJETO.md).

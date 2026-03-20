@@ -41,13 +41,7 @@ from src.reporting.report_generator import (
 def parse_args() -> argparse.Namespace:
     # Cria a interface de linha de comando da etapa analitica.
     parser = argparse.ArgumentParser(
-        description="Executa o MVP de deteccao de anomalias do Financial Intelligence System.",
-    )
-    parser.add_argument(
-        "--input-path",
-        type=str,
-        default=None,
-        help="Caminho opcional para o CSV de transacoes.",
+        description="Executa a analise do Financial Intelligence System usando apenas o dataset sintetico gerado internamente.",
     )
     parser.add_argument(
         "--output-path",
@@ -103,7 +97,7 @@ def main() -> None:
     )
 
     # Carrega e valida o dataset que sera analisado.
-    transactions, dataset_path = load_transaction_dataset(args.input_path)
+    transactions, dataset_path = load_transaction_dataset()
     # Converte as transacoes em variaveis numericas e categoricas tratadas.
     enriched_transactions, feature_matrix = engineer_transaction_features(transactions)
     # Construi o perfil financeiro de cada conta antes de rodar a camada de explicabilidade.

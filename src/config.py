@@ -20,8 +20,6 @@ GENERATED_DATA_DIR = RAW_DATA_DIR / "generated"
 # Pasta onde os relatorios analiticos sao exportados.
 REPORTS_DIR = DATA_DIR / "reports"
 
-# Caminho padrao para um dataset publico externo, se existir.
-DEFAULT_PUBLIC_DATASET_PATH = RAW_DATA_DIR / "financial_transactions.csv"
 # Caminho padrao das contas sinteticas geradas.
 DEFAULT_ACCOUNTS_PATH = GENERATED_DATA_DIR / "accounts.csv"
 # Caminho padrao das transacoes sinteticas geradas.

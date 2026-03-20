@@ -1,55 +1,32 @@
 # Financial Intelligence System
 
-Projeto de dados sinteticos, analise comportamental, explicabilidade de anomalias e recomendacoes financeiras.
+Projeto de dados sintéticos e inteligência financeira para simular contas bancárias, analisar transações e identificar comportamentos suspeitos.
 
-## Visao geral
+## Visão geral
 
-O objetivo deste projeto e simular um ambiente financeiro plausivel e transformar esse historico em inteligencia acionavel.
+O sistema foi construído para gerar um ambiente financeiro fictício e aplicar análise comportamental em cima dele. Em vez de depender de dados externos, todo o fluxo operacional usa apenas dados sintéticos criados dentro do próprio projeto.
 
-Hoje o sistema faz quatro coisas principais:
+Hoje o projeto faz quatro coisas principais:
 
-1. gera contas sinteticas com perfis financeiros
-2. gera historico de transacoes com comportamento normal e comportamento suspeito
-3. detecta anomalias com base no padrao de cada conta
-4. produz explicacoes e recomendacoes financeiras personalizadas
+1. gera contas sintéticas com perfis financeiros
+2. gera transações sintéticas com comportamento normal e suspeito
+3. detecta e explica anomalias em transações
+4. gera recomendações financeiras personalizadas por conta
 
-Em outras palavras, o projeto deixou de ser apenas um detector de outliers e passou a funcionar como uma pequena plataforma de inteligencia financeira.
+## Fluxo do sistema
 
-## O pipeline completo
+O uso normal do projeto acontece em duas execuções:
 
-Quando o fluxo completo e executado, o sistema segue esta ordem:
+1. `python run_generation.py`
+   gera contas e transações sintéticas e salva os arquivos brutos em `data/raw/generated/`
 
-1. cria contas sinteticas com salario, saldo, cidade, horario de atividade e preferencias de gasto
-2. simula varias transacoes por conta ao longo do periodo definido
-3. valida a consistencia dos arquivos gerados
-4. carrega o dataset de transacoes
-5. cria features numericas e comportamentais para o modelo
-6. monta um perfil financeiro explicito para cada conta
-7. aplica o Isolation Forest para detectar anomalias
-8. explica cada anomalia comparando a transacao com o perfil da conta
-9. gera recomendacoes financeiras personalizadas por conta
-10. exporta relatorios e mostra um resumo claro no terminal
+2. `python main.py`
+   carrega apenas o dataset sintético gerado internamente, cria features, perfis financeiros, detecta anomalias, explica os casos e exporta os relatórios analíticos
 
-## O que existe hoje no projeto
+Importante:
 
-### Geracao de dados
-
-- contas sinteticas com renda, saldo e preferencias de consumo
-- transacoes com deposito de salario, pix, compras, pagamentos e saques
-- injecao de comportamento suspeito para permitir avaliacao do modelo
-
-### Analise comportamental
-
-- feature engineering por conta
-- deteccao de anomalias com Isolation Forest
-- score normalizado de anomalia
-- ranking das transacoes mais suspeitas
-
-### Inteligencia financeira
-
-- perfil financeiro por conta
-- explicacao textual das anomalias
-- recomendacoes financeiras simples e personalizadas
+- o projeto não aceita mais CSV externo no fluxo principal
+- a análise sempre usa `data/raw/generated/transactions.csv`
 
 ## Estrutura principal
 
@@ -58,7 +35,12 @@ financial-intelligence-system/
   data/
     raw/
       generated/
+        accounts.csv
+        transactions.csv
     reports/
+      account_profiles.csv
+      anomaly_report.csv
+      financial_recommendations.csv
   src/
     dataset/
     explainability/
@@ -71,212 +53,150 @@ financial-intelligence-system/
     utils/
   main.py
   run_generation.py
-  requirements.txt
+  DOCUMENTO-DO-PROJETO.md
 ```
 
-## Papel de cada modulo
+## O que cada etapa faz
 
-- `run_generation.py`
-  Orquestra a geracao de contas e transacoes sinteticas.
+### 1. Geração sintética
 
-- `main.py`
-  Orquestra o pipeline analitico completo: carga, features, perfis, modelo, explicacoes, recomendacoes e relatorios.
+Em [run_generation.py](C:/Users/muril/Códigos/financial-intelligence-system/run_generation.py), o sistema:
 
-- `src/config.py`
-  Centraliza caminhos padrao e configuracoes de geracao e analise.
+1. cria contas com salário, saldo inicial, cidade, categoria favorita e janela de atividade
+2. simula movimentações como salário, PIX, compras, boletos e saques
+3. injeta parte de comportamento anômalo de forma controlada
+4. valida consistência de IDs, valores e continuidade de saldo
+5. salva os CSVs brutos
 
-- `src/generators/account_generator.py`
-  Gera o perfil base das contas sinteticas.
+### 2. Análise financeira
 
-- `src/generators/transaction_generator.py`
-  Simula as transacoes e mantem a continuidade dos saldos.
+Em [main.py](C:/Users/muril/Códigos/financial-intelligence-system/main.py), o sistema:
 
-- `src/dataset/load_dataset.py`
-  Carrega o CSV e valida a estrutura minima exigida.
+1. carrega o dataset gerado internamente
+2. trata tipos e valida colunas obrigatórias
+3. cria features comportamentais
+4. constrói um perfil financeiro explícito para cada conta
+5. roda o Isolation Forest
+6. explica cada anomalia detectada
+7. gera recomendações financeiras acionáveis
+8. exporta os relatórios finais
 
-- `src/features/feature_engineering.py`
-  Construi variaveis numericas e comportamentais para o modelo.
-
-- `src/profiles/account_profiles.py`
-  Construi o perfil financeiro explicito de cada conta com media, desvio, frequencia, horarios e distribuicoes de uso.
-
-- `src/models/anomaly_detection.py`
-  Executa o Isolation Forest e devolve score e classificacao de anomalia.
-
-- `src/explainability/anomaly_explainer.py`
-  Explica cada anomalia comparando a transacao com o perfil da conta.
-
-- `src/recommendations/financial_recommendations.py`
-  Gera recomendacoes financeiras personalizadas com base no comportamento historico da conta.
-
-- `src/reporting/report_generator.py`
-  Salva os CSVs finais e monta a saida do terminal em portugues.
-
-## Como a geracao funciona
-
-Ao rodar `python run_generation.py`, o sistema:
-
-1. garante a existencia das pastas em `data/`
-2. monta a configuracao de geracao
-3. cria as contas sinteticas
-4. simula as transacoes dentro do periodo escolhido
-5. atualiza o saldo antes e depois de cada operacao
-6. valida integridade dos datasets
-7. salva:
-   - `data/raw/generated/accounts.csv`
-   - `data/raw/generated/transactions.csv`
-
-## Como a analise funciona
-
-Ao rodar `python main.py`, o sistema:
-
-1. encontra o dataset de entrada
-2. valida colunas e tipos
-3. cria as features de modelagem
-4. construi um perfil financeiro por conta com:
-   - valor medio
-   - desvio padrao
-   - frequencia diaria e semanal
-   - distribuicao por categoria
-   - horarios mais comuns
-   - tipos de transacao mais frequentes
-5. executa o Isolation Forest
-6. explica cada anomalia com regras legiveis
-7. gera recomendacoes personalizadas por conta
-8. salva:
-   - `data/reports/anomaly_report.csv`
-   - `data/reports/account_profiles.csv`
-   - `data/reports/financial_recommendations.csv`
-
-## O que sai em cada relatorio
+## Relatórios finais
 
 ### `anomaly_report.csv`
 
-Cada linha representa uma transacao analisada com score, classificacao de anomalia e campos de explicacao.
+Agora esse arquivo ficou mais limpo:
 
-Campos importantes:
+- contém apenas as transações classificadas como anomalia
+- não repete todas as features internas do modelo
+- prioriza colunas úteis para leitura humana
 
-- `anomaly_score`
-- `raw_anomaly_score`
-- `is_anomaly`
-- `anomaly_explanation`
-- `explanation_count`
+Campos principais:
 
-### `account_profiles.csv`
-
-Cada linha representa uma conta com seu perfil financeiro consolidado.
-
-Campos importantes:
-
-- `mean_amount`
-- `amount_std`
-- `avg_daily_transactions`
-- `avg_weekly_transactions`
-- `transaction_type_distribution`
-- `spending_category_amount_share`
-- `usual_activity_hours`
-- `estimated_monthly_income`
-- `average_monthly_spend`
-
-### `financial_recommendations.csv`
-
-Cada linha representa uma conta com recomendacoes personalizadas.
-
-Campos importantes:
-
-- `top_spending_category`
-- `top_spending_share`
-- `spend_to_income_ratio`
-- `impulsive_spending_share`
-- `recommendations_text`
-- `recommendation_count`
-
-## Como rodar
-
-### 1. Instalar dependencias
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Gerar os dados sinteticos
-
-```bash
-python run_generation.py --accounts 150 --months 6 --seed 42
-```
-
-### 3. Rodar a analise completa
-
-```bash
-python main.py
-```
-
-### 4. Rodar com um CSV proprio
-
-```bash
-python main.py --input-path data/raw/financial_transactions.csv --top-n 15
-```
-
-Esse comando serve para analisar um CSV externo no mesmo formato esperado pelo projeto, sem depender do dataset sintetico gerado localmente.
-
-## Campos minimos esperados no CSV de transacoes
-
-Se voce quiser usar um arquivo proprio, o pipeline espera pelo menos estas colunas:
-
+- `anomaly_rank`
 - `transaction_id`
 - `account_id`
 - `timestamp`
 - `transaction_type`
 - `amount`
-- `balance_before`
-- `balance_after`
-- `merchant_category`
-- `transaction_channel`
-- `location`
-- `origin_account`
-- `destination_account`
+- `anomaly_score`
+- `anomaly_explanation`
 
-## Saida do terminal
+### `account_profiles.csv`
 
-A experiencia no terminal foi organizada para ficar mais explicativa.
+Contém um resumo consolidado por conta, com foco em comportamento financeiro.
 
-Na geracao, o terminal mostra:
+Campos principais:
 
-- periodo simulado
-- quantidade de contas
-- quantidade de transacoes
+- `mean_amount`
+- `amount_std`
+- `avg_daily_transactions`
+- `avg_weekly_transactions`
+- `estimated_monthly_income`
+- `average_monthly_spend`
+- `spend_to_income_ratio`
+- `impulsive_spending_share`
+
+### `financial_recommendations.csv`
+
+Agora exporta apenas recomendações acionáveis, para evitar repetição de linhas sem utilidade prática.
+
+Campos principais:
+
+- `recommendation_rank`
+- `account_id`
+- `top_spending_category`
+- `spend_to_income_ratio`
+- `recommendation_priority`
+- `recommendations_text`
+
+## Saída no terminal
+
+As saídas no terminal foram reorganizadas para ficarem mais claras.
+
+Na geração, o terminal mostra:
+
+- período simulado
+- número de contas
+- número de transações
+- média de transações por conta
 - quantidade de fraudes rotuladas
 - caminhos dos arquivos gerados
 
-Na analise, o terminal mostra:
+Na análise, o terminal mostra:
 
-- dataset analisado
-- quantidade de contas e transacoes
-- perfis financeiros gerados
+- fonte analisada
+- período da análise
+- volume total analisado
 - anomalias detectadas e explicadas
-- caminhos dos tres relatorios
-- ranking das transacoes mais suspeitas com explicacao
-- recomendacoes financeiras em destaque
+- contas com recomendação acionável
+- caminhos dos relatórios
+- ranking das principais anomalias
+- recomendações em destaque
 
-## Observacao sobre o codigo
+## Como rodar
 
-Os nomes de funcoes, classes e variaveis continuam em ingles para manter um padrao tecnico comum em projetos de programacao, mas:
+### 1. Instalar dependências
 
-- as mensagens do terminal estao em portugues
-- os comentarios foram ampliados para estudo
-- a documentacao ficou mais orientada ao processo
+```bash
+pip install -r requirements.txt
+```
 
-## Testes
+### 2. Gerar os dados sintéticos
 
-O projeto possui testes em `tests/test_pipeline_integrity.py` cobrindo:
+```bash
+python run_generation.py --accounts 150 --months 6 --seed 42
+```
 
-- consistencia de saldo entre conta e transacoes
-- consistencia de categoria em `pix_out`
-- comportamento seguro do modelo em datasets pequenos
-- construcao de perfil financeiro
-- explicacao de anomalias
-- geracao de recomendacoes
+### 3. Rodar a análise
 
-## Autor
+```bash
+python main.py --top-n 10
+```
 
-Murilo Pedral
+## Módulos principais
+
+- [src/generators/account_generator.py](C:/Users/muril/Códigos/financial-intelligence-system/src/generators/account_generator.py)
+  gera os perfis de conta
+
+- [src/generators/transaction_generator.py](C:/Users/muril/Códigos/financial-intelligence-system/src/generators/transaction_generator.py)
+  gera o histórico de transações
+
+- [src/features/feature_engineering.py](C:/Users/muril/Códigos/financial-intelligence-system/src/features/feature_engineering.py)
+  transforma transações em variáveis para o modelo
+
+- [src/profiles/account_profiles.py](C:/Users/muril/Códigos/financial-intelligence-system/src/profiles/account_profiles.py)
+  constrói o perfil financeiro por conta
+
+- [src/explainability/anomaly_explainer.py](C:/Users/muril/Códigos/financial-intelligence-system/src/explainability/anomaly_explainer.py)
+  gera explicações legíveis das anomalias
+
+- [src/recommendations/financial_recommendations.py](C:/Users/muril/Códigos/financial-intelligence-system/src/recommendations/financial_recommendations.py)
+  produz recomendações financeiras personalizadas
+
+- [src/reporting/report_generator.py](C:/Users/muril/Códigos/financial-intelligence-system/src/reporting/report_generator.py)
+  organiza os relatórios e a saída do terminal
+
+## Documento principal do projeto
+
+Para uma explicação mais completa sobre objetivo, escopo, arquitetura e limitações, consulte [DOCUMENTO-DO-PROJETO.md](C:/Users/muril/Códigos/financial-intelligence-system/DOCUMENTO-DO-PROJETO.md).
