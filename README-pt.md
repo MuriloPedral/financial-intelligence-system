@@ -1,39 +1,57 @@
 # Financial Intelligence System
 
-Projeto de geracao de dados financeiros sinteticos e deteccao de anomalias em transacoes.
+Projeto de dados sinteticos, analise comportamental, explicabilidade de anomalias e recomendacoes financeiras.
 
-## Ideia do projeto
+## Visao geral
 
-Este projeto foi construido para simular um pequeno ecossistema bancario ficticio e, em seguida, aplicar analise de dados e machine learning para encontrar movimentacoes suspeitas.
+O objetivo deste projeto e simular um ambiente financeiro plausivel e transformar esse historico em inteligencia acionavel.
 
-Em vez de depender de dados bancarios reais, o sistema gera:
+Hoje o sistema faz quatro coisas principais:
 
-1. contas sinteticas com perfis de comportamento
-2. historico de transacoes ao longo do tempo
-3. sinais de comportamento anomalo
-4. um relatorio final com ranking das transacoes mais suspeitas
+1. gera contas sinteticas com perfis financeiros
+2. gera historico de transacoes com comportamento normal e comportamento suspeito
+3. detecta anomalias com base no padrao de cada conta
+4. produz explicacoes e recomendacoes financeiras personalizadas
 
-Isso permite estudar engenharia de dados, simulacao, comportamento financeiro e deteccao de anomalias dentro do mesmo projeto.
+Em outras palavras, o projeto deixou de ser apenas um detector de outliers e passou a funcionar como uma pequena plataforma de inteligencia financeira.
 
-## O que o sistema entrega hoje
+## O pipeline completo
 
-O projeto esta dividido em duas grandes etapas:
+Quando o fluxo completo e executado, o sistema segue esta ordem:
 
-1. Geracao de dados sinteticos
-2. Analise de anomalias
+1. cria contas sinteticas com salario, saldo, cidade, horario de atividade e preferencias de gasto
+2. simula varias transacoes por conta ao longo do periodo definido
+3. valida a consistencia dos arquivos gerados
+4. carrega o dataset de transacoes
+5. cria features numericas e comportamentais para o modelo
+6. monta um perfil financeiro explicito para cada conta
+7. aplica o Isolation Forest para detectar anomalias
+8. explica cada anomalia comparando a transacao com o perfil da conta
+9. gera recomendacoes financeiras personalizadas por conta
+10. exporta relatorios e mostra um resumo claro no terminal
 
-Na pratica, o fluxo completo fica assim:
+## O que existe hoje no projeto
 
-1. o sistema cria contas com salario, saldo inicial, cidade, horario de atividade e categorias favoritas de gasto
-2. o sistema simula varios dias de movimentacao para cada conta
-3. cada transacao recebe informacoes como valor, tipo, localizacao, saldo antes e saldo depois
-4. algumas transacoes sao geradas com comportamento mais estranho para representar fraude ou anomalia
-5. o pipeline analitico le o CSV gerado
-6. o pipeline cria features de comportamento por conta
-7. o modelo Isolation Forest calcula um score de anomalia
-8. o sistema exporta um CSV final com ranking das transacoes mais suspeitas
+### Geracao de dados
 
-## Estrutura principal do projeto
+- contas sinteticas com renda, saldo e preferencias de consumo
+- transacoes com deposito de salario, pix, compras, pagamentos e saques
+- injecao de comportamento suspeito para permitir avaliacao do modelo
+
+### Analise comportamental
+
+- feature engineering por conta
+- deteccao de anomalias com Isolation Forest
+- score normalizado de anomalia
+- ranking das transacoes mais suspeitas
+
+### Inteligencia financeira
+
+- perfil financeiro por conta
+- explicacao textual das anomalias
+- recomendacoes financeiras simples e personalizadas
+
+## Estrutura principal
 
 ```text
 financial-intelligence-system/
@@ -43,9 +61,12 @@ financial-intelligence-system/
     reports/
   src/
     dataset/
+    explainability/
     features/
     generators/
     models/
+    profiles/
+    recommendations/
     reporting/
     utils/
   main.py
@@ -53,72 +74,122 @@ financial-intelligence-system/
   requirements.txt
 ```
 
-## O papel de cada parte
+## Papel de cada modulo
 
 - `run_generation.py`
-  Script principal para gerar contas e transacoes sinteticas.
+  Orquestra a geracao de contas e transacoes sinteticas.
 
 - `main.py`
-  Script principal para carregar o dataset, criar features, rodar o modelo e salvar o relatorio.
+  Orquestra o pipeline analitico completo: carga, features, perfis, modelo, explicacoes, recomendacoes e relatorios.
 
 - `src/config.py`
   Centraliza caminhos padrao e configuracoes de geracao e analise.
 
 - `src/generators/account_generator.py`
-  Gera o perfil das contas simuladas.
+  Gera o perfil base das contas sinteticas.
 
 - `src/generators/transaction_generator.py`
-  Gera as transacoes e atualiza os saldos ao longo do tempo.
+  Simula as transacoes e mantem a continuidade dos saldos.
 
 - `src/dataset/load_dataset.py`
-  Carrega o CSV e valida as colunas obrigatorias.
+  Carrega o CSV e valida a estrutura minima exigida.
 
 - `src/features/feature_engineering.py`
-  Converte as transacoes em variaveis uteis para o modelo.
+  Construi variaveis numericas e comportamentais para o modelo.
+
+- `src/profiles/account_profiles.py`
+  Construi o perfil financeiro explicito de cada conta com media, desvio, frequencia, horarios e distribuicoes de uso.
 
 - `src/models/anomaly_detection.py`
-  Executa o Isolation Forest e produz os scores de anomalia.
+  Executa o Isolation Forest e devolve score e classificacao de anomalia.
+
+- `src/explainability/anomaly_explainer.py`
+  Explica cada anomalia comparando a transacao com o perfil da conta.
+
+- `src/recommendations/financial_recommendations.py`
+  Gera recomendacoes financeiras personalizadas com base no comportamento historico da conta.
 
 - `src/reporting/report_generator.py`
-  Organiza o resumo final exibido no terminal e salva o CSV do relatorio.
+  Salva os CSVs finais e monta a saida do terminal em portugues.
 
 ## Como a geracao funciona
 
-Quando voce roda `python run_generation.py`, o projeto executa este processo:
+Ao rodar `python run_generation.py`, o sistema:
 
-1. cria as pastas necessarias em `data/`
-2. monta uma configuracao com quantidade de contas, meses, taxa de fraude e semente aleatoria
-3. gera uma lista de contas sinteticas
-4. para cada conta, simula um periodo completo de movimentacoes
-5. inclui depositos de salario, transferencias, compras, pagamentos e saques
-6. atualiza o saldo da conta a cada transacao
-7. valida se nao existem erros como IDs duplicados ou saldo inconsistente
-8. salva:
+1. garante a existencia das pastas em `data/`
+2. monta a configuracao de geracao
+3. cria as contas sinteticas
+4. simula as transacoes dentro do periodo escolhido
+5. atualiza o saldo antes e depois de cada operacao
+6. valida integridade dos datasets
+7. salva:
    - `data/raw/generated/accounts.csv`
    - `data/raw/generated/transactions.csv`
 
 ## Como a analise funciona
 
-Quando voce roda `python main.py`, o projeto executa este processo:
+Ao rodar `python main.py`, o sistema:
 
-1. procura um dataset para analisar
-2. valida a estrutura do arquivo
-3. converte colunas para tipos corretos
-4. cria features como:
-   - hora da transacao
-   - dia da semana
-   - valor relativo ao saldo
-   - valor comparado com a media da conta
-   - tempo entre transacoes
-   - localizacao incomum
-   - horario incomum
-5. aplica o Isolation Forest
-6. gera:
-   - `anomaly_score`
-   - `raw_anomaly_score`
-   - `is_anomaly`
-7. salva o resultado em `data/reports/anomaly_report.csv`
-8. imprime no terminal um resumo em portugues com o ranking das transacoes mais suspeitas
+1. encontra o dataset de entrada
+2. valida colunas e tipos
+3. cria as features de modelagem
+4. construi um perfil financeiro por conta com:
+   - valor medio
+   - desvio padrao
+   - frequencia diaria e semanal
+   - distribuicao por categoria
+   - horarios mais comuns
+   - tipos de transacao mais frequentes
+5. executa o Isolation Forest
+6. explica cada anomalia com regras legiveis
+7. gera recomendacoes personalizadas por conta
+8. salva:
+   - `data/reports/anomaly_report.csv`
+   - `data/reports/account_profiles.csv`
+   - `data/reports/financial_recommendations.csv`
+
+## O que sai em cada relatorio
+
+### `anomaly_report.csv`
+
+Cada linha representa uma transacao analisada com score, classificacao de anomalia e campos de explicacao.
+
+Campos importantes:
+
+- `anomaly_score`
+- `raw_anomaly_score`
+- `is_anomaly`
+- `anomaly_explanation`
+- `explanation_count`
+
+### `account_profiles.csv`
+
+Cada linha representa uma conta com seu perfil financeiro consolidado.
+
+Campos importantes:
+
+- `mean_amount`
+- `amount_std`
+- `avg_daily_transactions`
+- `avg_weekly_transactions`
+- `transaction_type_distribution`
+- `spending_category_amount_share`
+- `usual_activity_hours`
+- `estimated_monthly_income`
+- `average_monthly_spend`
+
+### `financial_recommendations.csv`
+
+Cada linha representa uma conta com recomendacoes personalizadas.
+
+Campos importantes:
+
+- `top_spending_category`
+- `top_spending_share`
+- `spend_to_income_ratio`
+- `impulsive_spending_share`
+- `recommendations_text`
+- `recommendation_count`
 
 ## Como rodar
 
@@ -134,7 +205,7 @@ pip install -r requirements.txt
 python run_generation.py --accounts 150 --months 6 --seed 42
 ```
 
-### 3. Rodar a analise
+### 3. Rodar a analise completa
 
 ```bash
 python main.py
@@ -146,27 +217,11 @@ python main.py
 python main.py --input-path data/raw/financial_transactions.csv --top-n 15
 ```
 
-## O que existe dentro dos CSVs
+Esse comando serve para analisar um CSV externo no mesmo formato esperado pelo projeto, sem depender do dataset sintetico gerado localmente.
 
-### Arquivo de contas
+## Campos minimos esperados no CSV de transacoes
 
-Cada conta possui informacoes como:
-
-- `account_id`
-- `home_city`
-- `initial_balance`
-- `current_balance`
-- `salary`
-- `salary_day`
-- `activity_level`
-- `transactions_per_day`
-- `favorite_categories`
-- `active_hour_start`
-- `active_hour_end`
-
-### Arquivo de transacoes
-
-Cada transacao possui informacoes como:
+Se voce quiser usar um arquivo proprio, o pipeline espera pelo menos estas colunas:
 
 - `transaction_id`
 - `account_id`
@@ -178,49 +233,49 @@ Cada transacao possui informacoes como:
 - `merchant_category`
 - `transaction_channel`
 - `location`
-- `is_fraud`
 - `origin_account`
 - `destination_account`
 
 ## Saida do terminal
 
-Os scripts agora exibem saidas em portugues e em formato mais organizado.
+A experiencia no terminal foi organizada para ficar mais explicativa.
 
 Na geracao, o terminal mostra:
 
 - periodo simulado
 - quantidade de contas
 - quantidade de transacoes
-- quantidade de transacoes marcadas como fraude
+- quantidade de fraudes rotuladas
 - caminhos dos arquivos gerados
-- proximo comando sugerido
 
 Na analise, o terminal mostra:
 
-- dataset utilizado
-- transacoes analisadas
-- contas analisadas
-- quantidade de anomalias detectadas
-- fraudes rotuladas no dataset
-- fraudes rotuladas encontradas pelo modelo
-- caminho do CSV final
-- ranking das transacoes mais suspeitas
+- dataset analisado
+- quantidade de contas e transacoes
+- perfis financeiros gerados
+- anomalias detectadas e explicadas
+- caminhos dos tres relatorios
+- ranking das transacoes mais suspeitas com explicacao
+- recomendacoes financeiras em destaque
 
-## Observacao importante sobre o codigo
+## Observacao sobre o codigo
 
 Os nomes de funcoes, classes e variaveis continuam em ingles para manter um padrao tecnico comum em projetos de programacao, mas:
 
-- as mensagens de terminal estao em portugues
-- os comentarios do codigo foram ampliados para estudo
-- este README foi escrito de forma mais didatica
+- as mensagens do terminal estao em portugues
+- os comentarios foram ampliados para estudo
+- a documentacao ficou mais orientada ao processo
 
-## Testes e validacoes
+## Testes
 
-O projeto possui testes em `tests/test_pipeline_integrity.py` para validar pontos importantes, como:
+O projeto possui testes em `tests/test_pipeline_integrity.py` cobrindo:
 
-- saldo final das contas batendo com as transacoes
-- consistencia da categoria `transfer` em `pix_out`
-- comportamento seguro do modelo em datasets muito pequenos
+- consistencia de saldo entre conta e transacoes
+- consistencia de categoria em `pix_out`
+- comportamento seguro do modelo em datasets pequenos
+- construcao de perfil financeiro
+- explicacao de anomalias
+- geracao de recomendacoes
 
 ## Autor
 

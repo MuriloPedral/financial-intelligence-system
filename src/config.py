@@ -28,6 +28,10 @@ DEFAULT_ACCOUNTS_PATH = GENERATED_DATA_DIR / "accounts.csv"
 DEFAULT_TRANSACTIONS_PATH = GENERATED_DATA_DIR / "transactions.csv"
 # Caminho padrao do relatorio final de anomalias.
 DEFAULT_REPORT_PATH = REPORTS_DIR / "anomaly_report.csv"
+# Caminho padrao do arquivo de perfis financeiros por conta.
+DEFAULT_PROFILE_REPORT_PATH = REPORTS_DIR / "account_profiles.csv"
+# Caminho padrao do arquivo de recomendacoes financeiras por conta.
+DEFAULT_RECOMMENDATIONS_PATH = REPORTS_DIR / "financial_recommendations.csv"
 
 
 def ensure_project_directories() -> None:
